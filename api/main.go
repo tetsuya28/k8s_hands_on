@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strconv"
 
 	"main/model"
 
@@ -70,6 +71,7 @@ func main() {
 
 	r.Methods(http.MethodPost).Path("/todo").Handler(appHandler{dbConnection(dbx).postTodosHandler})
 	r.Methods(http.MethodGet).Path("/todo").Handler(appHandler{dbConnection(dbx).getTodosHandler})
+	r.Methods(http.MethodPost).Path("/todo/{id}/done").Handler(appHandler{dbConnection(dbx).postTodoStatusHandler})
 
 	http.Handle("/", r)
 	log.Fatal(http.ListenAndServe(":8000", r))
@@ -115,4 +117,29 @@ SELECT * FROM todos
 	}
 
 	return http.StatusOK, &todos, nil
+}
+
+func (a dbStore) postTodoStatusHandler(w http.ResponseWriter, r *http.Request) (int, interface{}, error) {
+	vars := mux.Vars(r)
+	todo := model.Todo{}
+	id, err := strconv.Atoi(vars["id"])
+	if err != nil {
+		return http.StatusBadRequest, nil, err
+	}
+
+	err = a.db.Get(&todo, `
+SELECT * FROM todos WHERE id = ?
+	`, id)
+	if err != nil {
+		return http.StatusInternalServerError, nil, err
+	}
+
+	_, err = a.db.Exec(`
+UPDATE todos SET is_done = ? WHERE id = ?
+	`, !todo.IsDone, todo.ID)
+	if err != nil {
+		return http.StatusInternalServerError, nil, err
+	}
+
+	return http.StatusOK, &todo, nil
 }
