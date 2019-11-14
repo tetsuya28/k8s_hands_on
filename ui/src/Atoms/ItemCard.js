@@ -1,12 +1,21 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
+axios.defaults.headers.post['Access-Control-Allow-Origin'] = '*';
+
+const postTodoStatusAPI = endpoint => {
+  if (process.env.NODE_ENV === "production") {
+    endpoint = process.env.REACT_APP_API_ENDPOINT + endpoint;
+  }
+  return axios.post(endpoint)
+}
+
 const TodoCard = props => {
   const data = props.data;
   const [itemInfo, setItemInfo] = useState();
 
   const postTodoStatus = () => {
-    axios.post("/todo/" + data.id + "/done")
+    postTodoStatusAPI("/todo/" + data.id + "/done")
       .then(function () {
         window.location.reload();
       });

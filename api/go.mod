@@ -10,6 +10,7 @@ require (
 	github.com/joho/godotenv v1.3.0
 	github.com/lib/pq v1.2.0 // indirect
 	github.com/mattn/go-sqlite3 v1.11.0 // indirect
+	github.com/rs/cors v1.7.0
 	golang.org/x/crypto v0.0.0-20191111213947-16651526fdb4 // indirect
 	golang.org/x/net v0.0.0-20191109021931-daa7c04131f5 // indirect
 	golang.org/x/sync v0.0.0-20190911185100-cd5d95a43a6e // indirect

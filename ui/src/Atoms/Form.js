@@ -3,6 +3,8 @@ import { FormControl, InputLabel, Input, FormHelperText, Button } from '@materia
 import makeStyles from "@material-ui/core/styles/makeStyles";
 import axios from 'axios';
 
+axios.defaults.headers.post['Access-Control-Allow-Origin'] = '*';
+
 const useStyle = makeStyles({
   form: {
     color: "white"
@@ -11,6 +13,13 @@ const useStyle = makeStyles({
     margin: 10
   }
 })
+
+const postTodoAPI = (endpoint, params) => {
+  if (process.env.NODE_ENV === "production") {
+    endpoint = process.env.REACT_APP_API_ENDPOINT + endpoint;
+  }
+  return axios.post(endpoint, params)
+}
 
 const TodoForm = props => {
   const classes = useStyle(props)
@@ -28,7 +37,7 @@ const TodoForm = props => {
     const params = {
       name: todoName
     }
-    axios.post("/todo", params)
+    postTodoAPI("/todo", params)
       .then(function () {
         window.location.reload();
       });

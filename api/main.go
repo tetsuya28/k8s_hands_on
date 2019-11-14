@@ -13,6 +13,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/jmoiron/sqlx"
 	"github.com/joho/godotenv"
+	"github.com/rs/cors"
 )
 
 var (
@@ -53,7 +54,13 @@ func respondJSON(w http.ResponseWriter, status int, payload interface{}) {
 }
 
 func main() {
-	err := godotenv.Load()
+	env := os.Getenv("GO_ENV")
+	var err error
+	if env == "docker" {
+		err = godotenv.Load(".env.docker")
+	} else {
+		err = godotenv.Load()
+	}
 	if err != nil {
 		log.Fatalf("error loading .env file. %s", err)
 	}
@@ -70,11 +77,25 @@ func main() {
 	r.HandleFunc("/ping", pingHandler).Methods("GET")
 
 	r.Methods(http.MethodPost).Path("/todo").Handler(appHandler{dbConnection(dbx).postTodosHandler})
+	r.Methods(http.MethodOptions).Path("/todo").Handler(appHandler{dbConnection(dbx).optionsTodosHandler})
 	r.Methods(http.MethodGet).Path("/todo").Handler(appHandler{dbConnection(dbx).getTodosHandler})
 	r.Methods(http.MethodPost).Path("/todo/{id}/done").Handler(appHandler{dbConnection(dbx).postTodoStatusHandler})
 
 	http.Handle("/", r)
-	log.Fatal(http.ListenAndServe(":8000", r))
+	crosHandler := cors.New(cors.Options{
+		AllowedOrigins: []string{"*"},
+		AllowedHeaders: []string{"Authorization", "Content-Type", "Access-Control-Allow-Headers"},
+		AllowedMethods: []string{
+			http.MethodHead,
+			http.MethodGet,
+			http.MethodPost,
+			http.MethodPut,
+			http.MethodPatch,
+			http.MethodDelete,
+			http.MethodOptions,
+		},
+	}).Handler(r)
+	log.Fatal(http.ListenAndServe(":8000", crosHandler))
 }
 
 func dbClient() (*sqlx.DB, error) {
@@ -89,6 +110,10 @@ func dbClient() (*sqlx.DB, error) {
 func pingHandler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(200)
 	w.Write([]byte("pong"))
+}
+
+func (a dbStore) optionsTodosHandler(w http.ResponseWriter, r *http.Request) (int, interface{}, error) {
+	return http.StatusOK, "ok", nil
 }
 
 func (a dbStore) postTodosHandler(w http.ResponseWriter, r *http.Request) (int, interface{}, error) {
