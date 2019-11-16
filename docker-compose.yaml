@@ -1,0 +1,35 @@
+version: '3.4'
+services:
+  nginx:
+    container_name: k8s_handson-nginx
+    image: k8s-handson/nginx:v1
+    build:
+      context: ./nginx
+      dockerfile: ./Dockerfile
+    ports:
+      - 8000:8000
+  ui:
+    container_name: k8s-handson-ui
+    image: k8s-handson/ui:v1
+    build:
+      context: ./ui
+      dockerfile: ./Dockerfile
+  api:
+    container_name: k8s-handson-api
+    image: k8s-handson/api:v1
+    build:
+      context: ./api
+      dockerfile: ./Dockerfile
+  db:
+    container_name: k8s-handson-db
+    image: k8s-handson/db:v1
+    build:
+      context: ./db
+      dockerfile: ./Dockerfile
+    ports:
+      - 3306:3306
+    volumes:
+      - ./db/data:/var/lib/mysql
+      - ./db/init.d:/docker-entrypoint-initdb.d
+    env_file:
+      - ./db/.env
