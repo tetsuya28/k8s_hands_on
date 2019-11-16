@@ -1,0 +1,38 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: k8s-handson-ui
+  namespace: test
+spec:
+  selector:
+    app: ui
+  type: NodePort
+  ports:
+    - name: http
+      protocol: TCP
+      port: 3000
+      targetPort: 3000
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ui-deployment
+  namespace: test
+spec:
+  selector:
+    matchLabels:
+      app: ui
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: ui
+    spec:
+      containers:
+      - name: ui
+        image: 716753868777.dkr.ecr.ap-northeast-1.amazonaws.com/k8s-handson-ui-UI_VERSION:v1
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 3000

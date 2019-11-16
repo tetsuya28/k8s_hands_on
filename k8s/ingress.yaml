@@ -1,0 +1,28 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: "ingress"
+  namespace: test
+  annotations:
+    kubernetes.io/ingress.class: alb
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/security-groups: sg-0f0af20e66d68566d
+  labels:
+    app: sample
+spec:
+  rules:
+  - http:
+      paths:
+      - path: /api/*
+        backend:
+          serviceName: "k8s-handson-api"
+          servicePort: 8000
+      - path: /db/*
+        backend:
+          serviceName: "k8s-handson-db"
+          servicePort: 3306
+      - path: /*
+        backend:
+          serviceName: "k8s-handson-ui"
+          servicePort: 3000
+ 
