@@ -8,7 +8,7 @@ schema:
     commands:
       install:
         status: true
-        method: go build -o bin/main main.go
+        method: go build -o bin/main main.go db.go
       run:
         status: true
         method: ./bin/main

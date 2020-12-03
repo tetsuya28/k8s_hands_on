@@ -1,197 +1,133 @@
 package main
 
 import (
-	"encoding/json"
-	"fmt"
+	"errors"
 	"log"
 	"net/http"
-	"os"
-	"strconv"
+	"time"
 
+	"github.com/go-playground/validator/v10"
+	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
 	"github.com/tetsuya28/k8s_hands_on/api/model"
-
-	_ "github.com/go-sql-driver/mysql"
-	"github.com/gorilla/mux"
-	"github.com/jmoiron/sqlx"
-	"github.com/joho/godotenv"
-	"github.com/rs/cors"
+	"gorm.io/gorm"
 )
 
-var (
-	dbx *sqlx.DB
-)
-
-type dbStore struct {
-	db *sqlx.DB
+type simpleResponse struct {
+	Message string `json:"message"`
 }
 
-func dbConnection(db *sqlx.DB) *dbStore {
-	return &dbStore{db: db}
+type privateAPI struct {
+	DB *gorm.DB
 }
 
-type appHandler struct {
-	h func(http.ResponseWriter, *http.Request) (int, interface{}, error)
+type CustomValidator struct {
+	validator *validator.Validate
 }
 
-func (a appHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	log.Println(r.Method, r.URL)
-	status, res, err := a.h(w, r)
-	if err != nil {
-		respondJSON(w, status, err)
-	}
-	respondJSON(w, status, res)
-}
-
-func respondJSON(w http.ResponseWriter, status int, payload interface{}) {
-	response, err := json.Marshal(payload)
-	if err != nil {
-		log.Println(w, response)
-		fmt.Println(w, response)
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(err.Error()))
-		return
-	}
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(status)
-	w.Write([]byte(response))
+func (cv *CustomValidator) Validate(i interface{}) error {
+	return cv.validator.Struct(i)
 }
 
 func main() {
-	env := os.Getenv("GO_ENV")
-
-	var err error
-	if env == "docker" {
-		err = godotenv.Load(".env.docker")
-	} else {
-		err = godotenv.Load()
-	}
+	dns := "root:password@tcp(127.0.0.1:3306)/sample?charset=utf8mb4&parseTime=True&loc=Local"
+	privateInterface := privateAPI{}
+	db, err := dbClient(dns)
 	if err != nil {
-		log.Fatalf("error loading .env file. %s", err)
+		panic(err)
 	}
+	privateInterface.DB = db
 
-	dbx, err := dbClient()
-	if err != nil {
-		log.Fatalf("failed to connect to DB: %s.", err.Error())
-		return
-	}
+	e := echo.New()
+	e.Validator = &CustomValidator{validator: validator.New()}
+	e.Use(middleware.Logger())
+	e.Use(middleware.Recover())
 
-	defer dbx.Close()
+	e.GET("/healthz", healthz)
+	api := e.Group("/api")
+	api.GET("/todos", privateInterface.fetchAllTodos)
+	api.POST("/todo", privateInterface.postTodo)
+	api.POST("/todo/:id", privateInterface.updateTodo)
+	api.DELETE("/todo/:id", privateInterface.deleteTodo)
 
-	r := mux.NewRouter()
-	r.NotFoundHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		log.Println("404")
-		log.Println(w)
-		log.Println(r)
-	})
-	r.HandleFunc("/api/ping", pingHandler).Methods("GET")
-
-	r.Methods(http.MethodGet).Path("/api/todo").Handler(appHandler{dbConnection(dbx).getTodosHandler})
-	r.Methods(http.MethodPost).Path("/api/todo").Handler(appHandler{dbConnection(dbx).postTodosHandler})
-	r.Methods(http.MethodDelete).Path("/api/todo/{id}").Handler(appHandler{dbConnection(dbx).deleteTodoHandler})
-	r.Methods(http.MethodOptions).Path("/api/todo").Handler(appHandler{dbConnection(dbx).optionsTodosHandler})
-	r.Methods(http.MethodPost).Path("/api/todo/{id}/done").Handler(appHandler{dbConnection(dbx).postTodoStatusHandler})
-
-	http.Handle("/", r)
-	crosHandler := cors.New(cors.Options{
-		AllowedOrigins: []string{"*"},
-		AllowedHeaders: []string{"Authorization", "Content-Type", "Access-Control-Allow-Headers"},
-		AllowedMethods: []string{
-			http.MethodHead,
-			http.MethodGet,
-			http.MethodPost,
-			http.MethodPut,
-			http.MethodPatch,
-			http.MethodDelete,
-			http.MethodOptions,
-		},
-	}).Handler(r)
-	log.Fatal(http.ListenAndServe(":8000", crosHandler))
+	e.Logger.Fatal(e.Start(":8080"))
 }
 
-func dbClient() (*sqlx.DB, error) {
-	datasource := os.Getenv("DATASOURCE")
-	if datasource == "" {
-		log.Fatal("Cannot get datasource for database.")
-	}
-
-	return sqlx.Open("mysql", datasource)
+func healthz(c echo.Context) error {
+	return c.JSON(http.StatusOK, simpleResponse{Message: "Health check endpoint"})
 }
 
-func pingHandler(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(200)
-	w.Write([]byte("pong"))
-}
-
-func (a dbStore) optionsTodosHandler(w http.ResponseWriter, r *http.Request) (int, interface{}, error) {
-	return http.StatusOK, "ok", nil
-}
-
-func (a dbStore) deleteTodoHandler(w http.ResponseWriter, r *http.Request) (int, interface{}, error) {
-	vars := mux.Vars(r)
-	id, err := strconv.Atoi(vars["id"])
-	if err != nil {
-		return http.StatusBadRequest, nil, err
-	}
-
-	_, err = a.db.Exec(`
-DELETE FROM todos WHERE id = ?
-	`, id)
-	if err != nil {
-		return http.StatusInternalServerError, nil, err
-	}
-
-	return http.StatusNoContent, nil, nil
-}
-
-func (a dbStore) postTodosHandler(w http.ResponseWriter, r *http.Request) (int, interface{}, error) {
-	todo := &model.Todo{}
-	if err := json.NewDecoder(r.Body).Decode(&todo); err != nil {
-		return http.StatusBadRequest, nil, err
-	}
-
-	_, err := a.db.Exec(`
-INSERT INTO todos (name, is_done) VALUES (?, ?)
-	`, todo.Name, todo.IsDone)
-	if err != nil {
-		return http.StatusInternalServerError, nil, err
-	}
-
-	return http.StatusOK, todo, nil
-}
-
-func (a dbStore) getTodosHandler(w http.ResponseWriter, r *http.Request) (int, interface{}, error) {
-	todos := []model.Todo{}
-	err := a.db.Select(&todos, `
-SELECT * FROM todos
-	`)
-	if err != nil {
-		return http.StatusInternalServerError, nil, err
-	}
-
-	return http.StatusOK, &todos, nil
-}
-
-func (a dbStore) postTodoStatusHandler(w http.ResponseWriter, r *http.Request) (int, interface{}, error) {
-	vars := mux.Vars(r)
+// TODO: (db privateAPI) ← 命名バグってるけどセンス無いので誰か助けて
+func (db privateAPI) postTodo(c echo.Context) error {
 	todo := model.Todo{}
-	id, err := strconv.Atoi(vars["id"])
-	if err != nil {
-		return http.StatusBadRequest, nil, err
+	if err := c.Bind(&todo); err != nil {
+		return c.JSON(http.StatusBadRequest, simpleResponse{Message: "Bad Request"})
+	}
+	if err := c.Validate(&todo); err != nil {
+		return c.JSON(http.StatusBadRequest, simpleResponse{Message: "Bad Request(Validation error)"})
 	}
 
-	err = a.db.Get(&todo, `
-SELECT * FROM todos WHERE id = ?
-	`, id)
+	err := db.DB.Create(&todo).Error
 	if err != nil {
-		return http.StatusInternalServerError, nil, err
+		log.Println(err)
+		c.JSON(http.StatusInternalServerError, simpleResponse{Message: "DB Error"})
+	}
+	return nil
+}
+
+func (db privateAPI) fetchAllTodos(c echo.Context) error {
+	todos := make([]model.Todo, 0)
+	err := db.DB.Find(&todos).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return c.JSON(http.StatusOK, model.TodosResponse{})
+		}
+		return c.JSON(http.StatusInternalServerError, nil)
+	}
+	return c.JSON(http.StatusOK, todos)
+}
+
+func (db privateAPI) updateTodo(c echo.Context) error {
+	id := c.Param("id")
+	if id == "" {
+		return c.JSON(http.StatusBadRequest, simpleResponse{Message: "Bad Request(ID is missing)"})
 	}
 
-	_, err = a.db.Exec(`
-UPDATE todos SET is_done = ? WHERE id = ?
-	`, !todo.IsDone, todo.ID)
-	if err != nil {
-		return http.StatusInternalServerError, nil, err
+	updateTodo := model.Todo{}
+	if err := c.Bind(&updateTodo); err != nil {
+		return c.JSON(http.StatusBadRequest, simpleResponse{Message: "Bad Request"})
+	}
+	if err := c.Validate(&updateTodo); err != nil {
+		return c.JSON(http.StatusBadRequest, simpleResponse{Message: "Bad Request(Validation error)"})
 	}
 
-	return http.StatusOK, &todo, nil
+	todo := model.Todo{}
+	err := db.DB.First(&todo).Error
+	if err != nil {
+		log.Println(err)
+		c.JSON(http.StatusInternalServerError, simpleResponse{Message: "DB Error"})
+	}
+	now := time.Now()
+	todo.Name = updateTodo.Name
+	todo.IsDone = updateTodo.IsDone
+	todo.UpdatedAt = now
+	err = db.DB.Save(&todo).Error
+	if err != nil {
+		log.Println(err)
+		c.JSON(http.StatusInternalServerError, simpleResponse{Message: "DB Error"})
+	}
+	return c.JSON(http.StatusOK, todo)
+}
+
+func (db privateAPI) deleteTodo(c echo.Context) error {
+	id := c.Param("id")
+	if id == "" {
+		return c.JSON(http.StatusBadRequest, simpleResponse{Message: "Bad Request(ID is missing)"})
+	}
+	err := db.DB.Delete(&model.Todo{}, id).Error
+	if err != nil {
+		log.Println(err)
+		c.JSON(http.StatusInternalServerError, simpleResponse{Message: "DB Error"})
+	}
+	return nil
 }

@@ -5,9 +5,13 @@ import (
 )
 
 type Todo struct {
-	ID        int       `db:"id" json:"id"`
-	Name      string    `db:"name" json:"name"`
-	IsDone    bool      `db:"is_done" json:"is_done"`
-	CreatedAt time.Time `db:"created_at" json:"created_at"`
-	UpdatedAt time.Time `db:"updated_at" json:"updated_at"`
+	ID        int       `json:"id"`
+	Name      string    `json:"name" validate:"required"`
+	IsDone    bool      `json:"is_done"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+}
+
+type TodosResponse struct {
+	Todos []Todo `json:"items"`
 }
