@@ -8,7 +8,7 @@ import (
 	"os"
 	"strconv"
 
-	"main/model"
+	"github.com/tetsuya28/k8s_hands_on/api/model"
 
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/gorilla/mux"

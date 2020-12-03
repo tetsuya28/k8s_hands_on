@@ -1,6 +1,6 @@
 node_modules
 .env
 db/data
-app/app
+app/bin/main
 ui/build
 

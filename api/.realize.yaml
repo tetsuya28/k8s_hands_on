@@ -3,21 +3,20 @@ settings:
     force: false
     interval: 0s
 schema:
-- name: backend
-  path: .
-  commands:
-    install:
-      status: true
-      method: go build -o app main.go
-    run:
-      status: true
-      method: ./app
-  watcher:
-    extensions:
-    - go
-    paths:
-    - /
-    ignored_paths:
-    - .git
-    - .realize
-    - vendor
+  - name: backend
+    path: .
+    commands:
+      install:
+        status: true
+        method: go build -o bin/main main.go
+      run:
+        status: true
+        method: ./bin/main
+    watcher:
+      extensions:
+        - go
+      paths:
+        - /
+      ignored_paths:
+        - .git
+        - .realize
