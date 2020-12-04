@@ -1,25 +1,19 @@
-version: '3.4'
+version: "3.4"
 services:
-  nginx:
-    container_name: k8s_handson-nginx
-    image: k8s-handson/nginx:v1
-    build:
-      context: ./nginx
-      dockerfile: ./Dockerfile
-    ports:
-      - 8000:8000
   ui:
     container_name: k8s-handson-ui
-    image: k8s-handson/ui:v1
     build:
       context: ./ui
       dockerfile: ./Dockerfile
+    ports:
+      - 3000:3000
   api:
     container_name: k8s-handson-api
-    image: k8s-handson/api:v1
     build:
       context: ./api
       dockerfile: ./Dockerfile
+    ports:
+      - 8080:8080
   db:
     container_name: k8s-handson-db
     image: k8s-handson/db:v1

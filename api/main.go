@@ -39,6 +39,12 @@ func main() {
 	privateInterface.DB = db
 
 	e := echo.New()
+
+	// CORS対策
+	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
+		AllowOrigins: []string{"*"},
+		AllowMethods: []string{http.MethodGet, http.MethodPut, http.MethodPost, http.MethodDelete},
+	}))
 	e.Validator = &CustomValidator{validator: validator.New()}
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
@@ -84,6 +90,7 @@ func (db privateAPI) fetchAllTodos(c echo.Context) error {
 		}
 		return c.JSON(http.StatusInternalServerError, nil)
 	}
+	c.Response().Header().Set("Access-Control-Allow-Origin", "*")
 	return c.JSON(http.StatusOK, todos)
 }
 

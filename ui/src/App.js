@@ -17,7 +17,7 @@ const App = () => {
   const [todos, setTodos] = useState();
 
   useEffect(() => {
-    getTodos("/todo")
+    getTodos("/todos")
       .then(function (response) {
         setTodos(response.data);
       })
