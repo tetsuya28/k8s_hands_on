@@ -1,5 +1,8 @@
 include .env
 
+run:
+	export `cat .env` && realize s
+
 migrate/init:
 	mysql -u root -h 127.0.0.1 --protocol tcp -e "create database \`$(DB_NAME)\`" -p$(MYSQL_ROOT_PASSWORD)
 

@@ -2,16 +2,25 @@ package main
 
 import (
 	"errors"
+	"fmt"
 	"log"
 	"net/http"
 	"time"
 
 	"github.com/go-playground/validator/v10"
+	"github.com/kelseyhightower/envconfig"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/tetsuya28/k8s_hands_on/api/model"
 	"gorm.io/gorm"
 )
+
+type dbConfig struct {
+	Host     string `required:"true"`
+	User     string `required:"true"`
+	Password string `required:"true"`
+	Database string `required:"true"`
+}
 
 type simpleResponse struct {
 	Message string `json:"message"`
@@ -30,13 +39,24 @@ func (cv *CustomValidator) Validate(i interface{}) error {
 }
 
 func main() {
-	dns := "root:password@tcp(127.0.0.1:3306)/sample?charset=utf8mb4&parseTime=True&loc=Local"
+	dbConf := dbConfig{}
+	err := envconfig.Process("DB", &dbConf)
+	if err != nil {
+		panic(err)
+	}
+
+	dns := fmt.Sprintf("%s:%s@tcp(%s:3306)/%s?charset=utf8mb4&parseTime=True&loc=Local", dbConf.User, dbConf.Password, dbConf.Host, dbConf.Database)
 	privateInterface := privateAPI{}
 	db, err := dbClient(dns)
 	if err != nil {
 		panic(err)
 	}
 	privateInterface.DB = db
+
+	// 面倒くさいのでここでMigrate
+	if err := db.AutoMigrate(&model.Todo{}); err != nil {
+		panic(err)
+	}
 
 	e := echo.New()
 

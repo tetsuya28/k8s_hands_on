@@ -8,6 +8,7 @@ require (
 	github.com/gorilla/mux v1.8.0 // indirect
 	github.com/jmoiron/sqlx v1.2.0 // indirect
 	github.com/joho/godotenv v1.3.0 // indirect
+	github.com/kelseyhightower/envconfig v1.4.0 // indirect
 	github.com/labstack/echo/v4 v4.1.17 // indirect
 	github.com/rs/cors v1.7.0 // indirect
 	gorm.io/driver/mysql v1.0.3 // indirect
