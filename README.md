@@ -1,18 +1,35 @@
-# 学生向けk8sハンズオンアプリケーション
+# Kubernetes Hands-on
 
-## バックエンド
+## Pre-requirement
+### API
 * api/
 ```
 cp api/.env{.sample,}
 cp api/.env.docker{.sample,}
 ```
 
-## フロントエンド
+### Frontend
 * ui/
 
-## データベース
+### Database
 * db/
 ```
 cp db/.env{.sample,}
 ```
 
+## How to run
+### All in docker-compose(Recommended)
+- Start `docker-compose`
+  ```
+  $ docker-compose up -d
+  ```
+### API local
+- Install `realize`
+- Start `docker-compose` for DB.
+  ```
+  $ docker-compose up -d db
+  ```
+- Run API
+  ```
+  $ make run
+  ```
