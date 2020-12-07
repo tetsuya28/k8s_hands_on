@@ -14,6 +14,8 @@ services:
       dockerfile: ./Dockerfile
     ports:
       - 8080:8080
+    env_file:
+      - ./api/.env.docker
   db:
     container_name: k8s-handson-db
     image: k8s-handson/db:v1

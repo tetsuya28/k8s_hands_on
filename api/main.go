@@ -30,11 +30,11 @@ type privateAPI struct {
 	DB *gorm.DB
 }
 
-type CustomValidator struct {
+type customValidator struct {
 	validator *validator.Validate
 }
 
-func (cv *CustomValidator) Validate(i interface{}) error {
+func (cv *customValidator) Validate(i interface{}) error {
 	return cv.validator.Struct(i)
 }
 
@@ -46,11 +46,11 @@ func main() {
 	}
 
 	dns := fmt.Sprintf("%s:%s@tcp(%s:3306)/%s?charset=utf8mb4&parseTime=True&loc=Local", dbConf.User, dbConf.Password, dbConf.Host, dbConf.Database)
-	privateInterface := privateAPI{}
 	db, err := dbClient(dns)
 	if err != nil {
 		panic(err)
 	}
+	privateInterface := privateAPI{}
 	privateInterface.DB = db
 
 	// 面倒くさいのでここでMigrate
@@ -65,11 +65,12 @@ func main() {
 		AllowOrigins: []string{"*"},
 		AllowMethods: []string{http.MethodGet, http.MethodPut, http.MethodPost, http.MethodDelete},
 	}))
-	e.Validator = &CustomValidator{validator: validator.New()}
+	e.Validator = &customValidator{validator: validator.New()}
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
 
 	e.GET("/healthz", healthz)
+
 	api := e.Group("/api")
 	api.GET("/todos", privateInterface.fetchAllTodos)
 	api.POST("/todo", privateInterface.postTodo)
