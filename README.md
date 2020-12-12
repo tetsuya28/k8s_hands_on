@@ -10,6 +10,9 @@ cp api/.env.docker{.sample,}
 
 ### Frontend
 * ui/
+```
+cp ui/.env{.sample,}
+```
 
 ### Database
 * db/
