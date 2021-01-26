@@ -7,9 +7,7 @@ import TodoForm from "./Atoms/Form";
 axios.defaults.headers.post['Access-Control-Allow-Origin'] = '*';
 
 const getTodos = (endpoint) => {
-  if (process.env.NODE_ENV === "production") {
-    endpoint = process.env.REACT_APP_API_ENDPOINT + endpoint;
-  }
+  endpoint = process.env.REACT_APP_API_ENDPOINT + endpoint;
   return axios.get(endpoint);
 }
 

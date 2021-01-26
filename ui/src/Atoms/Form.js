@@ -15,9 +15,7 @@ const useStyle = makeStyles({
 })
 
 const postTodoAPI = (endpoint, params) => {
-  if (process.env.NODE_ENV === "production") {
-    endpoint = process.env.REACT_APP_API_ENDPOINT + endpoint;
-  }
+  endpoint = process.env.REACT_APP_API_ENDPOINT + endpoint;
   return axios.post(endpoint, params)
 }
 

@@ -4,17 +4,13 @@ import { Button } from '@material-ui/core';
 
 axios.defaults.headers.post['Access-Control-Allow-Origin'] = '*';
 
-const postTodoStatusAPI = endpoint => {
-  if (process.env.NODE_ENV === "production") {
-    endpoint = process.env.REACT_APP_API_ENDPOINT + endpoint;
-  }
+const updateDoneStatusAPI = endpoint => {
+  endpoint = process.env.REACT_APP_API_ENDPOINT + endpoint;
   return axios.post(endpoint)
 }
 
 const deleteTodoAPI = endpoint => {
-  if (process.env.NODE_ENV === "production") {
-    endpoint = process.env.REACT_APP_API_ENDPOINT + endpoint;
-  }
+  endpoint = process.env.REACT_APP_API_ENDPOINT + endpoint;
   return axios.delete(endpoint)
 }
 
@@ -22,8 +18,8 @@ const TodoCard = props => {
   const data = props.data;
   const [itemInfo, setItemInfo] = useState();
 
-  const postTodoStatus = () => {
-    postTodoStatusAPI("/todo/" + data.id + "/done")
+  const updateDoneStatus = () => {
+    updateDoneStatusAPI("/todo/" + data.id + "/done")
       .then(function () {
         window.location.reload();
       });
@@ -46,12 +42,12 @@ const TodoCard = props => {
         itemInfo ?
           (
             itemInfo.is_done === true ? (
-              < div onClick={postTodoStatus} >
-                ☑ {itemInfo.name} - <Button variant="outlined" color="secondary" onClick={deleteTodo}>削除する</Button>
+              < div>
+                <span onClick={updateDoneStatus}>☑</span> {itemInfo.name} - <Button variant="outlined" color="secondary" onClick={deleteTodo}>削除する</Button>
               </div>
             ) : (
-                < div onClick={postTodoStatus} >
-                  □ {itemInfo.name} - <Button variant="outlined" color="secondary" onClick={deleteTodo}>削除する</Button>
+                < div >
+                  <span onClick={updateDoneStatus}>□</span> {itemInfo.name} - <Button variant="outlined" color="secondary" onClick={deleteTodo}>削除する</Button>
                 </div>
               )
           ) : (
