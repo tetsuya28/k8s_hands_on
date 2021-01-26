@@ -2,5 +2,5 @@ USERNAME = <割り振られた名前>
 
 update_username:
 	for f in 'api.yaml' 'ui.yaml'; do \
-		sed -e 's/NAME/$(USERNAME)/' $$f; \
+		sed -i '' 's/NAME/$(USERNAME)/' $$f; \
 	done
