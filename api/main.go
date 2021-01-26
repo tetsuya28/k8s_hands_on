@@ -74,7 +74,7 @@ func main() {
 	api := e.Group("/api")
 	api.GET("/todos", privateInterface.fetchAllTodos)
 	api.POST("/todo", privateInterface.postTodo)
-	api.POST("/todo/:id", privateInterface.updateTodo)
+	api.POST("/todo/:id/done", privateInterface.doneTodo)
 	api.DELETE("/todo/:id", privateInterface.deleteTodo)
 
 	e.Logger.Fatal(e.Start(":8080"))
@@ -115,18 +115,10 @@ func (db privateAPI) fetchAllTodos(c echo.Context) error {
 	return c.JSON(http.StatusOK, todos)
 }
 
-func (db privateAPI) updateTodo(c echo.Context) error {
+func (db privateAPI) doneTodo(c echo.Context) error {
 	id := c.Param("id")
 	if id == "" {
 		return c.JSON(http.StatusBadRequest, simpleResponse{Message: "Bad Request(ID is missing)"})
-	}
-
-	updateTodo := model.Todo{}
-	if err := c.Bind(&updateTodo); err != nil {
-		return c.JSON(http.StatusBadRequest, simpleResponse{Message: "Bad Request"})
-	}
-	if err := c.Validate(&updateTodo); err != nil {
-		return c.JSON(http.StatusBadRequest, simpleResponse{Message: "Bad Request(Validation error)"})
 	}
 
 	todo := model.Todo{}
@@ -136,8 +128,7 @@ func (db privateAPI) updateTodo(c echo.Context) error {
 		c.JSON(http.StatusInternalServerError, simpleResponse{Message: "DB Error"})
 	}
 	now := time.Now()
-	todo.Name = updateTodo.Name
-	todo.IsDone = updateTodo.IsDone
+	todo.IsDone = !todo.IsDone
 	todo.UpdatedAt = now
 	err = db.DB.Save(&todo).Error
 	if err != nil {
