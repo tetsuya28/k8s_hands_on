@@ -1,16 +1,16 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: NAME
+  name: NAME-api
 spec:
   selector:
     matchLabels:
-      app: NAME
+      app: NAME-api
   replicas: 1
   template:
     metadata:
       labels:
-        app: NAME
+        app: NAME-api
     spec:
       containers:
         - name: api
@@ -37,10 +37,10 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: NAME
+  name: NAME-api
 spec:
   selector:
-    app: NAME
+    app: NAME-api
   type: NodePort
   ports:
     - name: http
