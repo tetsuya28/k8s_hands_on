@@ -122,7 +122,7 @@ func (db privateAPI) doneTodo(c echo.Context) error {
 	}
 
 	todo := model.Todo{}
-	err := db.DB.First(&todo).Error
+	err := db.DB.Where("id = ?", id).First(&todo).Error
 	if err != nil {
 		log.Println(err)
 		c.JSON(http.StatusInternalServerError, simpleResponse{Message: "DB Error"})
