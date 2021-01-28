@@ -18,13 +18,6 @@ const TodoCard = props => {
   const data = props.data;
   const [itemInfo, setItemInfo] = useState();
 
-  const updateDoneStatus = () => {
-    updateDoneStatusAPI("/todo/" + data.id + "/done")
-      .then(function () {
-        window.location.reload();
-      });
-  }
-
   const deleteTodo = () => {
     deleteTodoAPI("/todo/" + data.id)
       .then(function () {
@@ -41,15 +34,9 @@ const TodoCard = props => {
       {
         itemInfo ?
           (
-            itemInfo.is_done === true ? (
-              < div>
-                <span onClick={updateDoneStatus}>☑</span> {itemInfo.name} - <Button variant="outlined" color="secondary" onClick={deleteTodo}>削除する</Button>
-              </div>
-            ) : (
-                < div >
-                  <span onClick={updateDoneStatus}>□</span> {itemInfo.name} - <Button variant="outlined" color="secondary" onClick={deleteTodo}>削除する</Button>
-                </div>
-              )
+            <div>
+              { itemInfo.name} - <Button variant="outlined" color="secondary" onClick={deleteTodo}>削除する</Button>
+            </div>
           ) : (
             <div></div>
           )
