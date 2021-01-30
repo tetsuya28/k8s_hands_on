@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"os"
 	"net/http"
 	"time"
 
@@ -72,6 +73,7 @@ func main() {
 	e.GET("/healthz", healthz)
 
 	api := e.Group("/api")
+	api.GET("/check", check)
 	api.GET("/todos", privateInterface.fetchAllTodos)
 	api.POST("/todo", privateInterface.postTodo)
 	api.POST("/todo/:id/done", privateInterface.doneTodo)
@@ -82,6 +84,10 @@ func main() {
 
 func healthz(c echo.Context) error {
 	return c.JSON(http.StatusOK, simpleResponse{Message: "Health check endpoint"})
+}
+
+func check(c echo.Context) error {
+	return c.JSON(http.StatusOK, simpleResponse{Message: os.Getenv("HOSTNAME")})
 }
 
 // TODO: (db privateAPI) ← 命名バグってるけどセンス無いので誰か助けて
