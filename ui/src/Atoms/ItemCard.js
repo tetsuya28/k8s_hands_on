@@ -4,11 +4,6 @@ import { Button } from '@material-ui/core';
 
 axios.defaults.headers.post['Access-Control-Allow-Origin'] = '*';
 
-const updateDoneStatusAPI = endpoint => {
-  endpoint = process.env.REACT_APP_API_ENDPOINT + endpoint;
-  return axios.post(endpoint)
-}
-
 const deleteTodoAPI = endpoint => {
   endpoint = process.env.REACT_APP_API_ENDPOINT + endpoint;
   return axios.delete(endpoint)
